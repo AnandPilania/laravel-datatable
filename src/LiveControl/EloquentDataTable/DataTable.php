@@ -254,9 +254,17 @@ class DataTable
     protected function addSelect()
     {
         $rawSelect = [];
+        $queryGrammar = Model::resolveConnection()->getQueryGrammar();
         foreach ($this->columns as $index => $column) {
             if (isset($this->rawColumns[$index])) {
-                $rawSelect[] = $this->rawColumns[$index] . ' as ' . Model::resolveConnection()->getQueryGrammar()->wrap($this->columnNames[$index]);
+                $rawColumn = $this->rawColumns[$index];
+                if ($rawColumn instanceof ExpressionWithName) {
+                    $rawColumn = $rawColumn->getExpression();
+                }
+                if ($rawColumn instanceof raw) {
+                    $rawColumn = $rawColumn->getValue($queryGrammar);
+                }
+                $rawSelect[] = $rawColumn . ' as ' . $queryGrammar->wrap($this->columnNames[$index]);
             }
         }
         $this->builder = $this->builder->addSelect(new raw(implode(', ', $rawSelect)));
